@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f7f8f3">
+  <title>Gather — Meal planning made easy</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #20251e;
+      --muted: #777d71;
+      --green: #315f3d;
+      --green-dark: #244b2f;
+      --green-pale: #e8efe5;
+      --paper: #f7f8f3;
+      --white: #fff;
+      --line: #e9ebe4;
+      --orange: #e99955;
+      --shadow: 0 12px 35px rgba(31, 44, 31, .055);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .topbar {
+      height: 76px;
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 max(5vw, 24px);
+      background: rgba(255,255,255,.8);
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 750; letter-spacing: -.7px; }
+    .brand-mark {
+      width: 34px; height: 34px; display: grid; place-items: center;
+      background: var(--green); color: #fff; border-radius: 11px; font-size: 18px;
+    }
+    .top-link { display: flex; gap: 8px; align-items: center; color: var(--muted); font-weight: 550; }
+    .top-link span { color: var(--green); }
+    main { max-width: 1180px; padding: 48px 24px 80px; margin: 0 auto; }
+    .hero { text-align: center; max-width: 650px; margin: 0 auto 36px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px;
+      border-radius: 30px; background: var(--green-pale); color: var(--green);
+      font-weight: 700; font-size: 11px; letter-spacing: .7px; text-transform: uppercase;
+    }
+    h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(38px, 5vw, 54px); line-height: 1.04; letter-spacing: -1.8px; margin: 16px 0 12px; font-weight: 500; }
+    .hero p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.65; }
+    .workspace { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 22px; align-items: start; }
+    .panel { background: var(--white); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+    .setup { padding: 24px; }
+    .panel-heading { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 23px; }
+    .panel-heading h2 { margin: 0 0 5px; font-size: 17px; letter-spacing: -.3px; }
+    .panel-heading p { color: var(--muted); margin: 0; font-size: 12px; }
+    .step { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 9px; background: var(--green-pale); color: var(--green); font-weight: 750; }
+    .field { margin: 0 0 18px; }
+    .field label, .field-label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 700; color: #454a42; }
+    .field select, .field input {
+      width: 100%; height: 43px; border: 1px solid #e4e7df; border-radius: 10px;
+      background: #fff; color: var(--ink); padding: 0 12px; outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field select:focus, .field input:focus { border-color: #8da98d; box-shadow: 0 0 0 3px rgba(49,95,61,.1); }
+    .field textarea {
+      width: 100%; min-height: 76px; resize: vertical; border: 1px solid #e4e7df; border-radius: 10px;
+      background: #fff; color: var(--ink); padding: 10px 12px; outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field textarea:focus { border-color: #8da98d; box-shadow: 0 0 0 3px rgba(49,95,61,.1); }
+    .day-schedule { display: grid; gap: 7px; }
+    .day-row { display: grid; grid-template-columns: 1fr; gap: 9px; padding: 10px; border: 1px solid var(--line); border-radius: 9px; }
+    .day-row strong { font-size: 12px; }
+    .day-meal-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .day-meal-option { display: flex; align-items: center; gap: 7px; color: #454a42; font-size: 11px; }
+    .day-meal-option input { accent-color: var(--green); width: 15px; height: 15px; margin: 0; }
+    #stores { min-height: 88px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .input-wrap { position: relative; }
+    .input-wrap .prefix { position: absolute; left: 12px; top: 12px; color: var(--muted); }
+    .input-wrap input { padding-left: 26px; }
+    .field-hint { margin: 6px 0 0; font-size: 10px; line-height: 1.45; color: #8a8e84; }
+    .generate {
+      border: 0; border-radius: 11px; width: 100%; height: 47px; margin-top: 2px;
+      background: var(--green); color: white; font-size: 13px; font-weight: 700;
+      box-shadow: 0 5px 12px rgba(49,95,61,.18); transition: background .15s, transform .15s;
+    }
+    .generate:hover { background: var(--green-dark); transform: translateY(-1px); }
+    .generate:focus-visible, button:focus-visible, input[type="checkbox"]:focus-visible { outline: 3px solid #a5c29f; outline-offset: 2px; }
+    .results { min-width: 0; }
+    .summary { padding: 21px 23px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .summary-copy { min-width: 0; }
+    .summary-copy h2 { margin: 0 0 7px; font-size: 18px; letter-spacing: -.4px; }
+    .summary-copy p { color: var(--muted); margin: 0; font-size: 12px; }
+    .summary-copy strong { color: var(--ink); font-weight: 650; }
+    .section-title { display: flex; align-items: center; justify-content: space-between; margin: 23px 2px 12px; }
+    .section-title h2 { font-size: 16px; margin: 0; letter-spacing: -.3px; }
+    .section-title span { color: var(--muted); font-size: 11px; }
+    .meal-list { display: grid; gap: 10px; }
+    .meal-card { width: 100%; padding: 16px 18px; display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; gap: 14px; border: 1px solid var(--line); color: inherit; font: inherit; text-align: left; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
+    .meal-card:hover { border-color: #c9d7c4; box-shadow: 0 6px 18px rgba(31, 44, 31, .08); transform: translateY(-1px); }
+    .meal-card:focus-visible { outline: 3px solid #a5c29f; outline-offset: 2px; }
+    .meal-icon { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: #f5f2e9; font-size: 25px; }
+    .meal-day { color: #78816f; font-size: 10px; font-weight: 750; letter-spacing: .8px; text-transform: uppercase; margin-bottom: 4px; }
+    .meal-name { font-size: 14px; font-weight: 700; line-height: 1.3; }
+    .meal-meta { color: var(--muted); font-size: 11px; margin-top: 5px; }
+    .recipe-dialog { width: min(600px, calc(100vw - 32px)); max-width: none; max-height: 85vh; padding: 0; overflow: auto; border: 1px solid var(--line); border-radius: 18px; color: var(--ink); box-shadow: 0 24px 70px rgba(25, 35, 25, .22); }
+    .recipe-dialog::backdrop { background: rgba(25, 35, 25, .48); }
+    .recipe-dialog-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 24px 16px; background: white; border-bottom: 1px solid var(--line); }
+    .recipe-dialog-head h2 { margin: 0; font-size: 21px; line-height: 1.25; }
+    .recipe-dialog-meta { margin: 7px 0 0; color: var(--muted); font-size: 13px; }
+    .recipe-close { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 8px; padding: 7px 11px; background: white; color: var(--ink); font-weight: 650; }
+    .recipe-dialog-body { padding: 18px 24px 24px; }
+    .recipe-serving-note { margin: 0 0 18px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .recipe-dialog-body h3 { margin: 18px 0 8px; font-size: 15px; }
+    .recipe-ingredients, .recipe-directions { margin: 0; padding-left: 22px; }
+    .recipe-ingredients li, .recipe-directions li { padding: 0 0 8px 4px; line-height: 1.55; }
+    .shopping { padding: 20px 22px; margin-top: 20px; container-type: inline-size; }
+    .shopping-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .shopping-head h2 { margin: 0; font-size: 16px; }
+    .shopping-head p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+    .copy-btn { background: white; color: var(--green); border: 1px solid #dce5d8; border-radius: 8px; padding: 8px 11px; font-weight: 700; font-size: 11px; white-space: nowrap; }
+    .copy-btn:hover { background: var(--green-pale); }
+    .grocery-list { display: grid; grid-template-columns: 1fr; margin-top: 16px; }
+    .grocery-row { display: grid; grid-template-columns: 20px minmax(0, 1fr) minmax(120px, max-content); gap: 14px; align-items: center; min-height: 58px; padding: 8px 4px; border-bottom: 1px solid #f0f1ed; }
+    .grocery-row input { accent-color: var(--green); margin: 0; width: 18px; height: 18px; }
+    .grocery-label { flex: 1; min-width: 0; display: grid; gap: 3px; }
+    .grocery-name { font-size: 14px; font-weight: 650; line-height: 1.3; }
+    .grocery-usage { color: var(--green); font-size: 11px; }
+    .grocery-row input:checked + .grocery-label .grocery-name { color: #9b9f96; text-decoration: line-through; }
+    .grocery-amount { font-size: 13px; white-space: nowrap; }
+    .grocery-amount { color: var(--muted); text-align: right; }
+    .estimate-note { border-top: 1px solid var(--line); margin: 14px 0 0; padding-top: 12px; color: #858a80; font-size: 10px; line-height: 1.5; }
+    .empty-note { padding: 30px; color: var(--muted); text-align: center; }
+    @media (min-width: 781px) {
+      body { height: 100vh; height: 100dvh; overflow: hidden; }
+      main { height: calc(100vh - 76px); height: calc(100dvh - 76px); display: flex; flex-direction: column; padding-top: 28px; padding-bottom: 24px; }
+      .hero { flex: 0 0 auto; margin-bottom: 24px; }
+      .workspace { flex: 1 1 auto; min-height: 0; align-items: stretch; }
+      .setup, .results { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+    }
+    @container (max-width: 520px) {
+      .grocery-row { grid-template-columns: 20px minmax(0, 1fr); grid-template-rows: auto auto; gap: 4px 10px; min-height: 64px; }
+      .grocery-row input { grid-column: 1; grid-row: 1 / span 2; }
+      .grocery-label { grid-column: 2; grid-row: 1; }
+      .grocery-amount { grid-column: 2; grid-row: 2; text-align: left; }
+    }
+    @media (max-width: 780px) {
+      body { height: auto; overflow: auto; }
+      main { padding-top: 32px; }
+      .workspace { grid-template-columns: 1fr; }
+      .setup, .results { min-height: auto; overflow: visible; }
+      .setup { position: static; }
+      .field-row { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .topbar { height: 64px; padding: 0 18px; }
+      .top-link { font-size: 11px; }
+      main { padding: 28px 15px 50px; }
+      .hero { margin-bottom: 26px; }
+      .hero p { font-size: 13px; }
+      .summary { padding: 17px; }
+      .summary-copy h2 { font-size: 16px; }
+      .meal-card { padding: 13px; grid-template-columns: 42px minmax(0, 1fr); gap: 10px; }
+      .meal-icon { width: 42px; height: 42px; font-size: 22px; }
+      .meal-name { font-size: 12px; }
+      .recipe-dialog-head, .recipe-dialog-body { padding-left: 18px; padding-right: 18px; }
+      .shopping { padding: 17px; }
+      .grocery-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">✳</span> gather</div>
+    <div class="top-link">Good food, <span>less guesswork.</span></div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="page-title">
+      <div class="eyebrow"><span aria-hidden="true">✦</span> Your week, figured out</div>
+      <h1 id="page-title">A little plan.<br> A lot less stress.</h1>
+      <p>Tell us what works for your table. We’ll put together a feel-good meal plan and a grocery list that fits.</p>
+    </section>
+
+    <div class="workspace">
+      <form id="plan-form" class="panel setup">
+        <div class="panel-heading">
+          <div><h2>Make it yours</h2><p>A few details help us get it right.</p></div>
+          <span class="step" aria-hidden="true">01</span>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="people">People</label>
+            <select id="people" name="people">
+              <option value="1">1 person</option><option value="2" selected>2 people</option><option value="3">3 people</option>
+              <option value="4">4 people</option><option value="5">5 people</option><option value="6">6 people</option>
+              <option value="7">7 people</option><option value="8">8 people</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="days">Plan length</label>
+            <select id="days" name="days">
+              <option value="3">3 days</option><option value="5" selected>5 days</option><option value="7">7 days</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="meals-per-day">Default meals per day</label>
+          <select id="meals-per-day" name="mealsPerDay">
+            <option value="0">No meals</option><option value="1" selected>1 meal</option>
+            <option value="2">2 meals</option><option value="3">3 meals</option>
+          </select>
+          <p id="recipe-source-status" class="field-hint" aria-live="polite">Loading more recipes from TheMealDB…</p>
+        </div>
+        <div class="field">
+          <span class="field-label">Customize each day</span>
+          <div id="day-schedule" class="day-schedule"></div>
+          <p class="field-hint">Choose breakfast, lunch, dinner, and/or a snack separately for each day.</p>
+        </div>
+        <div class="field">
+          <label for="diet">Dietary preference</label>
+          <select id="diet" name="diet">
+            <option value="balanced">No restrictions</option>
+            <option value="vegetarian">Vegetarian</option>
+            <option value="vegan">Vegan</option>
+            <option value="gluten-free">Gluten-free</option>
+            <option value="dairy-free">Dairy-free</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="calorie-goal">Preferred daily calories (per person)</label>
+          <input id="calorie-goal" name="calorieGoal" type="number" min="500" max="10000" step="50" value="2000" required>
+          <p class="field-hint">The planner adjusts portions so its calorie estimate reaches this target every day. Estimates are not exact nutrition facts; actual calories vary by ingredients and preparation.</p>
+        </div>
+        <div class="field">
+          <label for="preferences">Food preferences</label>
+          <textarea id="preferences" name="preferences" placeholder="e.g., no mushrooms, love beans, mild spice" aria-describedby="preferences-hint"></textarea>
+          <p id="preferences-hint" class="field-hint">Mention ingredients to avoid (like “no mushrooms”) or foods you enjoy.</p>
+        </div>
+        <p id="plan-error" class="field-hint" role="status" hidden></p>
+        <button class="generate" type="submit">Build my meal plan <span aria-hidden="true">→</span></button>
+      </form>
+
+      <section class="results" aria-label="Your meal plan">
+        <div class="panel summary">
+          <div class="summary-copy">
+            <h2 id="summary-title">Your week at a glance</h2>
+            <p id="summary-detail"></p>
+          </div>
+        </div>
+        <div class="section-title"><h2>Meals in your plan</h2><span id="meal-count"></span></div>
+        <p id="calorie-summary" class="field-hint" aria-live="polite"></p>
+        <div id="meal-list" class="meal-list" aria-live="polite"></div>
+        <section class="panel shopping" aria-labelledby="shopping-title">
+          <div class="shopping-head">
+            <div><h2 id="shopping-title">Your grocery list</h2><p id="shopping-subtitle"></p></div>
+            <button id="copy-list" class="copy-btn" type="button">Copy list</button>
+          </div>
+          <div id="grocery-list" class="grocery-list"></div>
+          <p class="estimate-note">Portions and grocery quantities are scaled to meet the selected daily calorie target in the planner’s estimates. Ingredient brands, exact portions, and preparation affect actual calories, so this cannot guarantee exact nutrition intake. Meals also reuse ingredients across recipes to support bulk shopping.</p>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="recipe-dialog" class="recipe-dialog" aria-labelledby="recipe-title" aria-describedby="recipe-serving-note">
+    <div class="recipe-dialog-head">
+      <div><h2 id="recipe-title"></h2><p id="recipe-dialog-meta" class="recipe-dialog-meta"></p></div>
+      <form method="dialog"><button class="recipe-close" type="submit" aria-label="Close recipe">Close</button></form>
+    </div>
+    <div class="recipe-dialog-body">
+      <p id="recipe-serving-note" class="recipe-serving-note"></p>
+      <h3>Ingredients</h3>
+      <ul id="recipe-ingredients" class="recipe-ingredients"></ul>
+      <h3>Cooking directions</h3>
+      <ol id="recipe-directions" class="recipe-directions"></ol>
+    </div>
+  </dialog>
+
+  <script>
+    const recipes = [
+      { name: "Lemony chickpea & spinach bowls", icon: "🥙", time: 25, tags: ["vegetarian", "vegan", "gluten-free", "dairy-free"], ingredients: [["chickpeas", 1, "can"], ["spinach", .12, "lb"], ["quinoa", .18, "lb"], ["lemon", .25, "each"], ["cucumber", .25, "each"]] },
+      { name: "Cozy tomato-lentil curry", icon: "🍛", time: 35, tags: ["vegetarian", "vegan", "gluten-free", "dairy-free"], ingredients: [["red lentils", .2, "lb"], ["coconut milk", .5, "can"], ["crushed tomatoes", .5, "can"], ["rice", .18, "lb"], ["onion", .25, "each"]] },
+      { name: "Sheet-pan chicken & sweet potato", icon: "🍗", time: 35, tags: ["gluten-free", "dairy-free"], ingredients: [["chicken breast", .3, "lb"], ["sweet potato", .35, "lb"], ["broccoli", .2, "lb"], ["garlic", .2, "each"]] },
+      { name: "Black bean & avocado tacos", icon: "🌮", time: 20, tags: ["vegetarian", "vegan", "dairy-free"], ingredients: [["black beans", .5, "can"], ["corn tortillas", .25, "pack"], ["avocado", .5, "each"], ["cabbage", .12, "lb"], ["lime", .25, "each"]] },
+      { name: "Creamy mushroom & pea pasta", icon: "🍝", time: 25, tags: ["vegetarian"], ingredients: [["pasta", .2, "lb"], ["mushrooms", .2, "lb"], ["frozen peas", .12, "lb"], ["cream", .1, "pint"], ["parmesan", .06, "lb"]] },
+      { name: "Crispy tofu rice bowls", icon: "🥗", time: 30, tags: ["vegetarian", "vegan", "dairy-free"], ingredients: [["tofu", .25, "block"], ["rice", .18, "lb"], ["edamame", .15, "lb"], ["carrots", .2, "lb"], ["soy sauce", .05, "bottle"]] },
+      { name: "Smoky white bean & kale stew", icon: "🥘", time: 30, tags: ["vegetarian", "vegan", "gluten-free", "dairy-free"], ingredients: [["cannellini beans", .5, "can"], ["kale", .15, "bunch"], ["crushed tomatoes", .4, "can"], ["vegetable broth", .3, "carton"], ["onion", .2, "each"]] },
+      { name: "Ginger salmon & sesame greens", icon: "🐟", time: 25, tags: ["gluten-free", "dairy-free"], ingredients: [["salmon", .28, "lb"], ["rice", .18, "lb"], ["bok choy", .25, "each"], ["ginger", .04, "lb"], ["sesame oil", .04, "bottle"]] },
+      { name: "Roasted pepper & white bean pasta", icon: "🍲", time: 30, tags: ["vegetarian", "vegan", "dairy-free"], ingredients: [["pasta", .2, "lb"], ["white beans", .5, "can"], ["red bell pepper", .5, "each"], ["spinach", .1, "lb"], ["garlic", .2, "each"]] },
+      { name: "Loaded baked potatoes & broccoli", icon: "🥔", time: 40, tags: ["vegetarian", "gluten-free"], ingredients: [["russet potatoes", .55, "lb"], ["broccoli", .2, "lb"], ["cheddar", .12, "lb"], ["sour cream", .06, "tub"], ["black beans", .35, "can"]] },
+      { name: "Overnight oats with berries", icon: "🫐", time: 10, tags: ["vegetarian", "vegan", "gluten-free", "dairy-free"], ingredients: [["rolled oats", .12, "lb"], ["oat milk", .2, "carton"], ["mixed berries", .12, "lb"], ["chia seeds", .03, "lb"]] },
+      { name: "Avocado & white bean toast", icon: "🥑", time: 15, tags: ["vegetarian", "vegan", "dairy-free"], ingredients: [["whole grain bread", .12, "loaf"], ["white beans", .3, "can"], ["avocado", .4, "each"], ["lemon", .2, "each"]] },
+      { name: "Spinach, egg & potato breakfast hash", icon: "🍳", time: 25, tags: ["vegetarian", "gluten-free"], ingredients: [["eggs", 1, "each"], ["russet potatoes", .3, "lb"], ["spinach", .08, "lb"], ["onion", .15, "each"]] },
+      { name: "Banana oat pancakes", icon: "🥞", time: 20, tags: ["vegetarian", "dairy-free"], ingredients: [["banana", .5, "each"], ["rolled oats", .12, "lb"], ["eggs", .5, "each"], ["oat milk", .08, "carton"]] },
+      { name: "Greek chickpea & cucumber salad", icon: "🥗", time: 20, tags: ["vegetarian", "vegan", "gluten-free", "dairy-free"], ingredients: [["chickpeas", .7, "can"], ["cucumber", .35, "each"], ["cherry tomatoes", .2, "lb"], ["red onion", .15, "each"], ["lemon", .2, "each"]] },
+      { name: "Chicken & veggie rice stir-fry", icon: "🍚", time: 30, tags: ["gluten-free", "dairy-free"], ingredients: [["chicken breast", .25, "lb"], ["rice", .18, "lb"], ["frozen mixed vegetables", .2, "lb"], ["tamari", .04, "bottle"], ["eggs", .5, "each"]] },
+      { name: "Turkey & avocado lettuce wraps", icon: "🥬", time: 20, tags: ["gluten-free", "dairy-free"], ingredients: [["ground turkey", .25, "lb"], ["romaine lettuce", .2, "head"], ["avocado", .3, "each"], ["tomato", .2, "each"]] },
+      { name: "Red lentil & carrot soup", icon: "🍲", time: 35, tags: ["vegetarian", "vegan", "gluten-free", "dairy-free"], ingredients: [["red lentils", .18, "lb"], ["carrots", .2, "lb"], ["vegetable broth", .3, "carton"], ["onion", .2, "each"], ["lemon", .15, "each"]] },
+      { name: "Pesto zucchini & tomato pasta", icon: "🍝", time: 25, tags: ["vegetarian"], ingredients: [["pasta", .2, "lb"], ["zucchini", .25, "lb"], ["cherry tomatoes", .18, "lb"], ["pesto", .08, "jar"], ["parmesan", .04, "lb"]] },
+      { name: "Beef & bean weeknight chili", icon: "🌶️", time: 40, tags: ["gluten-free", "dairy-free"], ingredients: [["ground beef", .22, "lb"], ["kidney beans", .4, "can"], ["crushed tomatoes", .4, "can"], ["bell pepper", .25, "each"], ["onion", .2, "each"]] },
+      { name: "Shrimp & black bean fajita bowls", icon: "🍤", time: 25, tags: ["gluten-free", "dairy-free"], ingredients: [["shrimp", .22, "lb"], ["black beans", .35, "can"], ["rice", .16, "lb"], ["bell pepper", .25, "each"], ["lime", .2, "each"]] },
+      { name: "Roasted cauliflower & tahini bowls", icon: "🥙", time: 35, tags: ["vegetarian", "vegan", "gluten-free", "dairy-free"], ingredients: [["cauliflower", .3, "head"], ["chickpeas", .5, "can"], ["rice", .16, "lb"], ["tahini", .05, "jar"], ["lemon", .2, "each"]] },
+      { name: "Sausage, pepper & potato tray bake", icon: "🍽️", time: 35, tags: ["gluten-free", "dairy-free"], ingredients: [["chicken sausage", .22, "lb"], ["russet potatoes", .35, "lb"], ["bell pepper", .25, "each"], ["red onion", .15, "each"]] },
+      { name: "Eggplant & chickpea tomato stew", icon: "🍆", time: 40, tags: ["vegetarian", "vegan", "dairy-free"], ingredients: [["eggplant", .3, "each"], ["chickpeas", .5, "can"], ["crushed tomatoes", .4, "can"], ["couscous", .14, "lb"], ["garlic", .15, "each"]] },
+      { name: "Tuna & sweetcorn jacket potatoes", icon: "🐟", time: 35, tags: ["gluten-free"], ingredients: [["russet potatoes", .45, "lb"], ["canned tuna", .5, "can"], ["sweet corn", .2, "can"], ["plain yogurt", .08, "cup"]] },
+      { name: "Black bean & sweet potato quesadillas", icon: "🧀", time: 25, tags: ["vegetarian"], ingredients: [["flour tortillas", .25, "pack"], ["black beans", .4, "can"], ["sweet potato", .2, "lb"], ["cheddar", .1, "lb"]] },
+      { name: "Lemon herb chicken & couscous", icon: "🍋", time: 30, tags: ["dairy-free"], ingredients: [["chicken breast", .25, "lb"], ["couscous", .16, "lb"], ["cucumber", .2, "each"], ["lemon", .2, "each"], ["parsley", .08, "bunch"]] },
+      { name: "Creamy butternut squash soup", icon: "🎃", time: 40, tags: ["vegetarian", "gluten-free"], ingredients: [["butternut squash", .35, "each"], ["vegetable broth", .3, "carton"], ["cream", .08, "pint"], ["onion", .2, "each"], ["whole grain bread", .1, "loaf"]] }
+    ];
+
+    const snacks = [
+      { name: "Apple & peanut butter", icon: "🍎", tags: ["vegetarian", "vegan", "gluten-free", "dairy-free"], ingredients: [["apples", .5, "each"], ["peanut butter", .04, "lb"]] },
+      { name: "Yogurt & berries", icon: "🫐", tags: ["vegetarian", "gluten-free"], ingredients: [["plain yogurt", .18, "cup"], ["mixed berries", .12, "lb"]] },
+      { name: "Hummus & crunchy carrots", icon: "🥕", tags: ["vegetarian", "vegan", "gluten-free", "dairy-free"], ingredients: [["hummus", .12, "cup"], ["carrots", .15, "lb"]] },
+      { name: "Banana oat bites", icon: "🍌", tags: ["vegetarian", "vegan", "dairy-free"], ingredients: [["banana", .5, "each"], ["rolled oats", .08, "lb"]] },
+      { name: "Cheddar & grapes", icon: "🍇", tags: ["vegetarian", "gluten-free"], ingredients: [["cheddar", .08, "lb"], ["grapes", .15, "lb"]] },
+      { name: "Roasted chickpeas", icon: "🫘", tags: ["vegetarian", "vegan", "gluten-free", "dairy-free"], ingredients: [["chickpeas", .5, "can"], ["paprika", .01, "jar"]] },
+      { name: "Cucumber & edamame cups", icon: "🥒", tags: ["vegetarian", "vegan", "gluten-free", "dairy-free"], ingredients: [["cucumber", .3, "each"], ["edamame", .12, "lb"], ["lime", .15, "each"]] },
+      { name: "Cottage cheese & pineapple", icon: "🍍", tags: ["vegetarian", "gluten-free"], ingredients: [["cottage cheese", .18, "cup"], ["pineapple", .15, "each"]] },
+      { name: "Trail mix & dried fruit", icon: "🥜", tags: ["vegetarian", "vegan", "gluten-free", "dairy-free"], ingredients: [["mixed nuts", .08, "lb"], ["raisins", .04, "lb"], ["pumpkin seeds", .03, "lb"]] },
+      { name: "Salsa & baked tortilla chips", icon: "🌽", tags: ["vegetarian", "vegan", "gluten-free", "dairy-free"], ingredients: [["salsa", .1, "jar"], ["corn tortillas", .12, "pack"], ["avocado", .15, "each"]] },
+      { name: "Pear & sunflower butter", icon: "🍐", tags: ["vegetarian", "vegan", "gluten-free", "dairy-free"], ingredients: [["pears", .5, "each"], ["sunflower seed butter", .04, "lb"]] },
+      { name: "Hard-boiled egg & cherry tomatoes", icon: "🥚", tags: ["vegetarian", "gluten-free", "dairy-free"], ingredients: [["eggs", 1, "each"], ["cherry tomatoes", .12, "lb"]] },
+      { name: "Date & oat energy bites", icon: "⚡", tags: ["vegetarian", "vegan", "gluten-free", "dairy-free"], ingredients: [["rolled oats", .06, "lb"], ["dates", .05, "lb"], ["peanut butter", .03, "lb"]] }
+    ];
+    const mealTypeRecipeNames = {
+      Breakfast: new Set(["Overnight oats with berries", "Avocado & white bean toast", "Spinach, egg & potato breakfast hash", "Banana oat pancakes"]),
+      Lunch: new Set(["Lemony chickpea & spinach bowls", "Black bean & avocado tacos", "Greek chickpea & cucumber salad", "Turkey & avocado lettuce wraps", "Red lentil & carrot soup", "Tuna & sweetcorn jacket potatoes", "Black bean & sweet potato quesadillas", "Lemon herb chicken & couscous", "Creamy butternut squash soup", "Avocado & white bean toast"])
+    };
+    const mealDbBaseUrl = "https://www.themealdb.com/api/json/v1/1/";
+    const mealDbCatalog = { Breakfast: [], Lunch: [], Dinner: [], Snack: [] };
+    const mealDbRecipeCache = new Map();
+    const cookingDirections = new Map([
+      ["Lemony chickpea & spinach bowls", ["Cook the quinoa according to its package directions. Drain and rinse the chickpeas; dice the cucumber and squeeze the lemon.", "Fold the spinach into the warm quinoa until just wilted, then stir in the chickpeas and cucumber.", "Finish with lemon juice and serve warm or chilled."]],
+      ["Cozy tomato-lentil curry", ["Cook the rice according to its package directions. Finely chop the onion.", "In a saucepan, soften the onion in a little oil if available. Stir in the lentils, crushed tomatoes, coconut milk, and enough water to cover; bring to a gentle simmer.", "Cook, stirring occasionally, until the lentils are tender, about 20–25 minutes. Add a splash of water if it thickens too much, then serve over rice."]],
+      ["Sheet-pan chicken & sweet potato", ["Heat the oven to 425°F (220°C). Cut the sweet potato into bite-size pieces, chop the broccoli, and mince the garlic.", "Arrange the vegetables and chicken on a sheet pan. Season as desired and roast, turning the vegetables once, until tender and the thickest part of the chicken reaches 165°F (74°C), about 20–25 minutes.", "Rest the chicken for 3 minutes, slice, and serve with the roasted vegetables."]],
+      ["Black bean & avocado tacos", ["Drain and rinse the black beans. Shred the cabbage, slice the avocado, and cut the lime into wedges.", "Warm the tortillas in a dry skillet or microwave. Heat the beans in a small pan until hot.", "Fill each tortilla with beans, cabbage, and avocado. Squeeze lime over the tacos and serve."]],
+      ["Creamy mushroom & pea pasta", ["Cook the pasta in boiling water according to its package directions. Add the peas for the final 2 minutes, then drain, reserving a little pasta water.", "While the pasta cooks, slice the mushrooms and sauté in a skillet until browned and tender. Stir in the cream and warm gently.", "Toss the pasta and peas with the sauce and parmesan. Loosen with a splash of reserved pasta water if needed."]],
+      ["Crispy tofu rice bowls", ["Cook the rice according to its package directions. Press the tofu dry and cut it into bite-size cubes; slice the carrots.", "Brown the tofu in a nonstick skillet over medium heat, turning until golden on several sides. Steam or boil the edamame until tender, and briefly sauté the carrots until crisp-tender.", "Divide the rice among bowls and top with tofu, edamame, and carrots. Drizzle with soy sauce."]],
+      ["Smoky white bean & kale stew", ["Dice the onion and remove any tough stems from the kale. Drain and rinse the cannellini beans.", "Soften the onion in a saucepan with a little oil if available. Add the tomatoes and broth; bring to a simmer.", "Stir in the beans and kale and simmer until the kale is tender, about 10 minutes. Season to taste and serve hot."]],
+      ["Ginger salmon & sesame greens", ["Cook the rice according to its package directions. Grate or finely chop the ginger and cut the bok choy into pieces.", "Warm the sesame oil in a skillet. Add the ginger, then the salmon; cook, turning once, until opaque and it reaches 145°F (63°C), about 3–5 minutes per side depending on thickness.", "Add the bok choy with a splash of water, cover, and steam until just tender. Serve with rice."]],
+      ["Roasted pepper & white bean pasta", ["Cook the pasta according to its package directions. Slice the bell pepper and mince the garlic.", "Sauté the pepper and garlic in a skillet until tender. Stir in the drained white beans and spinach; cook until the spinach wilts.", "Toss with the drained pasta and a splash of pasta water. Season to taste and serve."]],
+      ["Loaded baked potatoes & broccoli", ["Heat the oven to 425°F (220°C). Scrub the potatoes, prick them with a fork, and bake until tender when pierced, about 40–55 minutes.", "Cut the broccoli into florets and steam or boil until tender. Warm the drained black beans in a small pan.", "Split the potatoes and top with broccoli, beans, cheddar, and sour cream."]],
+      ["Overnight oats with berries", ["Stir the rolled oats, oat milk, and chia seeds together in a covered container.", "Refrigerate for at least 6 hours or overnight, until the oats have softened. Add a splash more oat milk if you prefer a looser texture.", "Top with the mixed berries and serve chilled."]],
+      ["Avocado & white bean toast", ["Toast the bread until golden. Drain and rinse the white beans, then mash them with a squeeze of lemon.", "Slice or mash the avocado and spread it over the toast.", "Spoon the seasoned white beans on top and serve."]],
+      ["Spinach, egg & potato breakfast hash", ["Dice the potatoes and onion. Cook the potatoes in a skillet with a little oil over medium heat, turning occasionally, until browned and tender, about 12–15 minutes.", "Add the onion and cook until softened, then stir in the spinach until wilted.", "Make a space in the pan for each egg, crack them in, cover, and cook until the whites are set."]],
+      ["Banana oat pancakes", ["Mash the banana and stir together with the oats, eggs, and oat milk. Let the mixture stand for 5 minutes to thicken.", "Spoon small pancakes into a lightly greased skillet over medium-low heat. Cook until the edges look set, then flip carefully.", "Cook the second side until golden and cooked through; serve warm."]],
+      ["Greek chickpea & cucumber salad", ["Drain and rinse the chickpeas. Dice the cucumber and tomatoes, and finely chop the red onion.", "Toss the chickpeas and vegetables together in a bowl.", "Squeeze the lemon over the salad, toss again, and season to taste. Serve chilled or at room temperature."]],
+      ["Chicken & veggie rice stir-fry", ["Cook the rice according to its package directions. Cut the chicken into small pieces.", "In a hot skillet, cook the chicken until browned and it reaches 165°F (74°C). Add the mixed vegetables and stir-fry until hot and tender.", "Move the chicken and vegetables to one side. Scramble the eggs in the open space, then stir everything together with the tamari and serve over rice."]],
+      ["Turkey & avocado lettuce wraps", ["Separate and rinse the romaine leaves. Dice the tomato and slice the avocado.", "Cook the ground turkey in a skillet over medium heat, breaking it up, until browned and it reaches 165°F (74°C). Season to taste.", "Spoon the turkey into the lettuce leaves and top with tomato and avocado."]],
+      ["Red lentil & carrot soup", ["Dice the onion and carrots. Rinse the lentils under cool water.", "Soften the onion in a saucepan with a little oil if available. Add the carrots, lentils, and broth; bring to a boil.", "Reduce to a simmer and cook until the lentils and carrots are tender, about 20–25 minutes. Finish with lemon juice and season to taste."]],
+      ["Pesto zucchini & tomato pasta", ["Cook the pasta according to its package directions. Slice the zucchini and halve the cherry tomatoes.", "Sauté the zucchini until tender-crisp, then add the tomatoes and cook until they begin to soften.", "Toss with the drained pasta, pesto, and parmesan. Add a splash of pasta water to loosen the sauce if needed."]],
+      ["Beef & bean weeknight chili", ["Dice the onion and bell pepper. Brown the ground beef in a saucepan, breaking it up as it cooks; drain excess fat if needed.", "Add the onion and pepper and cook until softened. Stir in the kidney beans and crushed tomatoes.", "Simmer for 20–25 minutes, stirring occasionally, until thickened. Season to taste and serve hot."]],
+      ["Shrimp & black bean fajita bowls", ["Cook the rice according to its package directions. Slice the bell pepper and drain and rinse the black beans.", "Sauté the pepper until tender-crisp. Add the shrimp and cook until opaque and curled, about 2–3 minutes per side; heat the beans alongside.", "Serve the shrimp, pepper, and beans over rice with lime juice squeezed on top."]],
+      ["Roasted cauliflower & tahini bowls", ["Heat the oven to 425°F (220°C). Cut the cauliflower into florets and drain and rinse the chickpeas.", "Spread the cauliflower and chickpeas on a sheet pan. Season as desired and roast until browned and tender, about 20–25 minutes. Cook the rice according to its package directions.", "Whisk the tahini with lemon juice and a little water until pourable. Serve over rice with the roasted vegetables and drizzle with the sauce."]],
+      ["Sausage, pepper & potato tray bake", ["Heat the oven to 425°F (220°C). Cut the potatoes, bell pepper, and red onion into bite-size pieces; slice the sausage.", "Spread everything on a sheet pan, season as desired, and roast for 25–30 minutes, turning once, until the potatoes are tender and sausage is browned.", "Serve hot from the pan."]],
+      ["Eggplant & chickpea tomato stew", ["Cut the eggplant into cubes and mince the garlic. Drain and rinse the chickpeas.", "Soften the garlic and eggplant in a saucepan with a little oil if available. Stir in the tomatoes and chickpeas and bring to a simmer.", "Cook until the eggplant is tender, about 20 minutes. Prepare the couscous according to its package directions and serve the stew over it."]],
+      ["Tuna & sweetcorn jacket potatoes", ["Heat the oven to 425°F (220°C). Scrub the potatoes, prick them with a fork, and bake until tender, about 40–55 minutes.", "Drain the tuna and sweetcorn and mix with the yogurt. Season to taste.", "Split the hot potatoes and spoon the tuna mixture over them."]],
+      ["Black bean & sweet potato quesadillas", ["Cook or roast the sweet potato until tender, then mash it roughly. Drain and rinse the black beans and mash them lightly.", "Spread the sweet potato and beans over half of each tortilla and top with cheddar; fold the tortillas closed.", "Cook in a dry skillet over medium heat until golden and crisp on both sides and the cheese has melted. Cut into wedges."]],
+      ["Lemon herb chicken & couscous", ["Prepare the couscous according to its package directions. Cut the chicken into bite-size pieces and season as desired.", "Cook the chicken in a skillet over medium heat until browned and it reaches 165°F (74°C). Dice the cucumber, chop the parsley, and squeeze the lemon.", "Fluff the couscous and fold in the cucumber, parsley, and lemon juice. Serve with the cooked chicken."]],
+      ["Creamy butternut squash soup", ["Dice the onion and cut the squash into small cubes. Soften the onion in a saucepan with a little oil if available.", "Add the squash and broth, bring to a simmer, and cook until the squash is very tender, about 20 minutes.", "Blend until smooth, stir in the cream, and warm gently. Serve with toasted bread."]],
+      ["Apple & peanut butter", ["Wash and slice the apple.", "Serve with the peanut butter for dipping."]],
+      ["Yogurt & berries", ["Spoon the yogurt into a bowl.", "Top with the berries and serve chilled."]],
+      ["Hummus & crunchy carrots", ["Wash, peel if desired, and cut the carrots into sticks.", "Serve with hummus for dipping."]],
+      ["Banana oat bites", ["Mash the banana and mix with the oats until evenly combined.", "Shape into small bites and chill for 10 minutes to firm up."]],
+      ["Cheddar & grapes", ["Wash the grapes and cut the cheddar into bite-size pieces.", "Serve together as a snack."]],
+      ["Roasted chickpeas", ["Heat the oven to 400°F (200°C). Drain, rinse, and thoroughly dry the chickpeas.", "Toss with paprika and a little oil if available, spread on a sheet pan, and roast for 25–35 minutes, shaking the pan once.", "Cool for a few minutes so the chickpeas crisp, then serve."]],
+      ["Cucumber & edamame cups", ["Cook the edamame according to its package directions and let it cool.", "Dice the cucumber and divide it with the edamame into small cups or bowls.", "Finish with lime juice and serve chilled."]],
+      ["Cottage cheese & pineapple", ["Spoon the cottage cheese into a bowl.", "Cut the pineapple into bite-size pieces, add on top, and serve chilled."]],
+      ["Trail mix & dried fruit", ["Combine the mixed nuts, raisins, and pumpkin seeds in a bowl.", "Divide into snack portions and store any extra in an airtight container."]],
+      ["Salsa & baked tortilla chips", ["Heat the oven to 375°F (190°C). Cut the tortillas into wedges and arrange in a single layer on a sheet pan.", "Bake for 8–12 minutes, turning once, until crisp. Let cool briefly.", "Serve with salsa and sliced avocado."]],
+      ["Pear & sunflower butter", ["Wash and slice the pear.", "Serve with sunflower seed butter for dipping."]],
+      ["Hard-boiled egg & cherry tomatoes", ["Place the egg in a saucepan and cover with cold water. Bring to a boil, cover, turn off the heat, and let stand for 10–12 minutes.", "Cool the egg in cold water, peel, and serve with washed cherry tomatoes."]],
+      ["Date & oat energy bites", ["Chop the dates finely. If they are firm, soak them in warm water for 5 minutes and drain well.", "Mix the dates with the oats and peanut butter until the mixture holds together; add a few drops of water if needed.", "Roll into small bites and chill for 15 minutes to firm up."]]
+    ]);
+    const caloriesPerServing = new Map([
+      ["Lemony chickpea & spinach bowls", 520], ["Cozy tomato-lentil curry", 560], ["Sheet-pan chicken & sweet potato", 540],
+      ["Black bean & avocado tacos", 510], ["Creamy mushroom & pea pasta", 590], ["Crispy tofu rice bowls", 550],
+      ["Smoky white bean & kale stew", 430], ["Ginger salmon & sesame greens", 570], ["Roasted pepper & white bean pasta", 520],
+      ["Loaded baked potatoes & broccoli", 560], ["Overnight oats with berries", 390], ["Avocado & white bean toast", 420],
+      ["Spinach, egg & potato breakfast hash", 430], ["Banana oat pancakes", 410], ["Greek chickpea & cucumber salad", 390],
+      ["Chicken & veggie rice stir-fry", 560], ["Turkey & avocado lettuce wraps", 420], ["Red lentil & carrot soup", 370],
+      ["Pesto zucchini & tomato pasta", 540], ["Beef & bean weeknight chili", 560], ["Shrimp & black bean fajita bowls", 480],
+      ["Roasted cauliflower & tahini bowls", 520], ["Sausage, pepper & potato tray bake", 580],
+      ["Eggplant & chickpea tomato stew", 490], ["Tuna & sweetcorn jacket potatoes", 450],
+      ["Black bean & sweet potato quesadillas", 570], ["Lemon herb chicken & couscous", 520], ["Creamy butternut squash soup", 390],
+      ["Apple & peanut butter", 190], ["Yogurt & berries", 170], ["Hummus & crunchy carrots", 140],
+      ["Banana oat bites", 160], ["Cheddar & grapes", 180], ["Roasted chickpeas", 150],
+      ["Cucumber & edamame cups", 130], ["Cottage cheese & pineapple", 170], ["Trail mix & dried fruit", 210],
+      ["Salsa & baked tortilla chips", 160], ["Pear & sunflower butter", 190],
+      ["Hard-boiled egg & cherry tomatoes", 110], ["Date & oat energy bites", 180]
+    ]);
+    const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const form = document.querySelector("#plan-form");
+    const scheduleElement = document.querySelector("#day-schedule");
+    const mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack"];
+    let schedule = daysOfWeek.map(() => ({ mealTypes: null }));
+    let currentShoppingText = "";
+    let dailyCalorieTotals = [];
+    let activeCards = [];
+    const recipeDialog = document.querySelector("#recipe-dialog");
+
+    async function fetchMealDbJson(path) {
+      const response = await fetch(`${mealDbBaseUrl}${path}`);
+      if (!response.ok) throw new Error(`TheMealDB request failed (${response.status}).`);
+      return response.json();
+    }
+
+    async function loadMealDbCatalog() {
+      const categories = await fetchMealDbJson("categories.php");
+      const categoryNames = categories.categories.map(category => category.strCategory);
+      const categoryResults = await Promise.all(categoryNames.map(async category => {
+        const result = await fetchMealDbJson(`filter.php?c=${encodeURIComponent(category)}`);
+        return (result.meals || []).map(meal => ({ ...meal, category }));
+      }));
+      const seenByType = Object.fromEntries(mealTypes.map(type => [type, new Set()]));
+      for (const meals of categoryResults) {
+        for (const meal of meals) {
+          const title = meal.strMeal.toLowerCase();
+          const isLunchRecipe = isMealDbLunchRecipe(meal);
+          if (meal.category === "Breakfast") addMealDbCatalogItem("Breakfast", meal, seenByType);
+          if (isLunchRecipe) addMealDbCatalogItem("Lunch", meal, seenByType);
+          if (!["Breakfast", "Dessert", "Side", "Starter"].includes(meal.category) && !isLunchRecipe) addMealDbCatalogItem("Dinner", meal, seenByType);
+          if (meal.category === "Dessert" || /\b(?:snack|bite|dip)\b/i.test(title)) addMealDbCatalogItem("Snack", meal, seenByType);
+        }
+      }
+      const count = mealTypes.reduce((sum, type) => sum + mealDbCatalog[type].length, 0);
+      document.querySelector("#recipe-source-status").textContent = `${count} additional recipe choices loaded from TheMealDB. Nutrition values are planning estimates.`;
+    }
+
+    function isMealDbLunchRecipe(meal) {
+      if (["Breakfast", "Dessert", "Side"].includes(meal.category)) return false;
+      return ["Starter", "Miscellaneous"].includes(meal.category)
+        || /\b(?:sandwich|salad|soup|wrap|bowl|taco|quesadilla|toast|roll|jacket potato|flatbread|pitta|pita|panini|frittata|omelette|omelet)\b/i.test(meal.strMeal);
+    }
+
+    function addMealDbCatalogItem(type, meal, seenByType) {
+      const id = meal.idMeal;
+      if (seenByType[type].has(id)) return;
+      seenByType[type].add(id);
+      mealDbCatalog[type].push({
+        id,
+        name: meal.strMeal,
+        category: meal.category,
+        tags: meal.category === "Vegan" ? ["vegetarian", "vegan"] : meal.category === "Vegetarian" ? ["vegetarian"] : []
+      });
+    }
+
+    function parseMealDbMeasure(measure) {
+      const match = measure.trim().match(/^(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)\s*(.*)$/);
+      let amount = 1;
+      let unitText = measure.trim();
+      if (match) {
+        const quantity = match[1].split(/\s+/);
+        amount = quantity.length === 2
+          ? Number(quantity[0]) + Number(quantity[1].split("/")[0]) / Number(quantity[1].split("/")[1])
+          : quantity[0].includes("/")
+            ? Number(quantity[0].split("/")[0]) / Number(quantity[0].split("/")[1])
+            : Number(quantity[0]);
+        unitText = match[2];
+      }
+      const unit = /\b(?:cup|cups)\b/i.test(unitText) ? "cup"
+        : /\b(?:tablespoon|tablespoons|tbsp)\b/i.test(unitText) ? "tbsp"
+          : /\b(?:teaspoon|teaspoons|tsp)\b/i.test(unitText) ? "tsp"
+            : /\b(?:clove|cloves)\b/i.test(unitText) ? "clove"
+              : /\b(?:can|cans|tin|tins)\b/i.test(unitText) ? "can"
+                : /\b(?:lb|lbs|pound|pounds)\b/i.test(unitText) ? "lb"
+                  : /\b(?:oz|ounce|ounces)\b/i.test(unitText) ? "oz"
+                    : /\b(?:g|gram|grams)\b/i.test(unitText) ? "g"
+                      : /\b(?:ml|milliliter|milliliters)\b/i.test(unitText) ? "ml"
+                        : /\b(?:kg|kilogram|kilograms)\b/i.test(unitText) ? "kg"
+                          : /\b(?:l|liter|liters)\b/i.test(unitText) ? "l"
+                            : /\b(?:slice|slices)\b/i.test(unitText) ? "slice"
+                              : "each";
+      return { amount: Math.max(amount / 4, .01), unit };
+    }
+
+    async function getMealDbRecipe(entry) {
+      if (mealDbRecipeCache.has(entry.id)) return mealDbRecipeCache.get(entry.id);
+      const result = await fetchMealDbJson(`lookup.php?i=${encodeURIComponent(entry.id)}`);
+      const meal = result.meals?.[0];
+      if (!meal) throw new Error(`TheMealDB did not return recipe ${entry.name}.`);
+      const ingredients = [];
+      for (let index = 1; index <= 20; index++) {
+        const name = meal[`strIngredient${index}`]?.trim();
+        if (!name) continue;
+        const { amount, unit } = parseMealDbMeasure(meal[`strMeasure${index}`] || "");
+        ingredients.push([name.toLowerCase(), amount, unit]);
+      }
+      if (!ingredients.length) throw new Error(`Recipe ${entry.name} has no ingredient details.`);
+      const directions = (meal.strInstructions || "").split(/\r?\n+|(?<=[.!?])\s+/).map(step => step.trim()).filter(step => step.length > 8);
+      const recipe = {
+        name: meal.strMeal,
+        icon: entry.category === "Breakfast" ? "🍳" : entry.category === "Dessert" ? "🍓" : "🍽️",
+        time: 30,
+        tags: entry.tags,
+        ingredients,
+        directions,
+        sourceUrl: meal.strSource || meal.strYoutube || ""
+      };
+      mealDbRecipeCache.set(entry.id, recipe);
+      return recipe;
+    }
+
+    function eligibleMealDbEntries(type, diet, avoidTerms, requiresMeatEveryMeal) {
+      if (["gluten-free", "dairy-free"].includes(diet)) return [];
+      return mealDbCatalog[type].filter(entry => {
+        const categoryMatchesDiet = diet === "balanced"
+          || diet === "vegetarian" && ["Vegetarian", "Vegan"].includes(entry.category)
+          || diet === "vegan" && entry.category === "Vegan";
+        const meatMatches = !requiresMeatEveryMeal || !["Vegetarian", "Vegan", "Side", "Starter", "Dessert"].includes(entry.category);
+        const title = entry.name.toLowerCase();
+        return categoryMatchesDiet && meatMatches && !avoidTerms.some(term => title.includes(term));
+      });
+    }
+
+    function formatIngredientAmount(amount, unit) {
+      const roundedAmount = Number(amount.toFixed(2));
+      const quantity = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(roundedAmount);
+      const pluralUnit = { can: "cans", each: "each", lb: "lb", oz: "oz", g: "g", kg: "kg", ml: "ml", l: "l", tbsp: "tbsp", tsp: "tsp", bunch: "bunches", loaf: "loaves", block: "blocks", pack: "packs", bottle: "bottles", carton: "cartons", pint: "pints", tub: "tubs", cup: "cups", jar: "jars", head: "heads", slice: "slices", clove: "cloves" }[unit] || `${unit}s`;
+      return `${quantity} ${roundedAmount === 1 ? unit : pluralUnit}`;
+    }
+
+    document.querySelector("#meal-list").addEventListener("click", event => {
+      const cardButton = event.target.closest("[data-card-index]");
+      if (!cardButton) return;
+      const card = activeCards[Number(cardButton.dataset.cardIndex)];
+      if (!card) throw new Error("Could not find the selected meal in the current plan.");
+      const directions = cookingDirections.get(card.recipe.name) || card.recipe.directions;
+      if (!directions?.length) throw new Error(`Missing cooking directions for ${card.recipe.name}.`);
+
+      document.querySelector("#recipe-title").textContent = card.recipe.name;
+      document.querySelector("#recipe-dialog-meta").textContent = `${daysOfWeek[card.dayIndex]} · ${card.label}${card.recipe.time ? ` · ${card.recipe.time} min` : ""}`;
+      document.querySelector("#recipe-serving-note").textContent = `Ingredients are scaled for ${form.elements.people.value} ${Number(form.elements.people.value) === 1 ? "person" : "people"} and adjusted by ×${card.portionFactor.toFixed(2)} to match the planned calorie target.`;
+      if (card.recipe.sourceUrl) {
+        const sourceLink = document.createElement("a");
+        sourceLink.href = card.recipe.sourceUrl;
+        sourceLink.target = "_blank";
+        sourceLink.rel = "noopener noreferrer";
+        sourceLink.textContent = "View original recipe";
+        sourceLink.className = "recipe-source-link";
+        document.querySelector("#recipe-serving-note").append(" ", sourceLink);
+      }
+      document.querySelector("#recipe-ingredients").replaceChildren(...card.recipe.ingredients.map(([name, amount, unit]) => {
+        const item = document.createElement("li");
+        item.textContent = `${formatIngredientAmount(amount * Number(form.elements.people.value) * card.portionFactor, unit)} ${name}`;
+        return item;
+      }));
+      document.querySelector("#recipe-directions").replaceChildren(...directions.map(step => {
+        const item = document.createElement("li");
+        item.textContent = step;
+        return item;
+      }));
+      recipeDialog.showModal();
+    });
+
+    recipeDialog.addEventListener("click", event => {
+      if (event.target === recipeDialog) recipeDialog.close();
+    });
+
+    function updateCalorieSummary() {
+      const calorieGoal = Number(form.elements.namedItem("calorieGoal").value);
+      document.querySelector("#calorie-summary").textContent = `Planned estimate per person (goal ${calorieGoal.toLocaleString()}): ${dailyCalorieTotals.map((total, index) => `${daysOfWeek[index].slice(0, 3)} ${total.toLocaleString()} cal`).join(" · ")}. Portions are adjusted to reach the target each day.`;
+    }
+
+    function renderSchedule() {
+      const dayCount = Number(form.elements.days.value);
+      const defaultMeals = Number(form.elements.namedItem("mealsPerDay").value);
+      const defaultTypes = defaultMeals === 1 ? ["Dinner"] : defaultMeals === 2 ? ["Lunch", "Dinner"] : defaultMeals === 3 ? ["Breakfast", "Lunch", "Dinner"] : [];
+      scheduleElement.innerHTML = daysOfWeek.slice(0, dayCount).map((day, index) => {
+        if (schedule[index].mealTypes === null) schedule[index].mealTypes = [...defaultTypes];
+        return `<div class="day-row">
+          <strong>${day}</strong>
+          <div class="day-meal-options">
+            ${mealTypes.map(type => `<label class="day-meal-option"><input type="checkbox" aria-label="${day} ${type}" data-day-meal="${index}" data-meal-type="${type}" ${schedule[index].mealTypes.includes(type) ? "checked" : ""}>${type}</label>`).join("")}
+          </div>
+        </div>`;
+      }).join("");
+      scheduleElement.querySelectorAll("[data-day-meal]").forEach(input => {
+        input.addEventListener("change", () => {
+          const selectedTypes = schedule[Number(input.dataset.dayMeal)].mealTypes;
+          if (input.checked) selectedTypes.push(input.dataset.mealType);
+          else selectedTypes.splice(selectedTypes.indexOf(input.dataset.mealType), 1);
+        });
+      });
+    }
+
+    function getMealRequirements() {
+      const preferences = form.elements.preferences.value.trim();
+      const avoidTerms = [...preferences.matchAll(/\b(?:no|avoid|without|skip|don't want|do not want)\s+([^,;.]+)/gi)]
+        .flatMap(match => match[1].split(/\band\b|\/|&/i))
+        .map(term => term.trim().toLowerCase()).filter(Boolean);
+      return {
+        diet: form.elements.diet.value,
+        avoidTerms,
+        requiresMeatEveryMeal: /\b(?:every|each|all)\s+meals?\b.{0,40}\bmeat\b|\bmeat\b.{0,40}\b(?:every|each|all)\s+meals?\b/i.test(preferences)
+      };
+    }
+
+    function recipeMatches(recipe, diet, avoidTerms) {
+      const searchable = `${recipe.name} ${(recipe.ingredients || []).map(([name]) => name).join(" ")}`.toLowerCase();
+      if (diet === "vegan" && /\b(?:meat|beef|pork|chicken|turkey|lamb|fish|salmon|shrimp|egg|milk|cream|cheese|yogurt|butter|honey)\b/i.test(searchable)) return false;
+      if (diet === "vegetarian" && /\b(?:meat|beef|pork|chicken|turkey|lamb|fish|salmon|shrimp|bacon|ham|sausage)\b/i.test(searchable)) return false;
+      return (diet === "balanced" || diet === "vegetarian" && recipe.tags.includes("vegetarian") || diet === "vegan" && recipe.tags.includes("vegan") || ["gluten-free", "dairy-free"].includes(diet) && recipe.tags.includes(diet))
+        && !avoidTerms.some(term => searchable.includes(term));
+    }
+
+    function recipeContainsMeat(recipe) {
+      return (recipe.ingredients || []).some(([name]) => /\b(?:beef|pork|chicken|turkey|lamb|venison|bison|ham|bacon|sausage|steak|meat)\b/i.test(name));
+    }
+
+    function shuffle(items) {
+      const result = [...items];
+      for (let index = result.length - 1; index > 0; index--) {
+        const other = Math.floor(Math.random() * (index + 1));
+        [result[index], result[other]] = [result[other], result[index]];
+      }
+      return result;
+    }
+
+    function pickRecipe(items, ingredientRecipeUse, recipeUse, likedTerms) {
+      const unused = items.filter(recipe => !recipeUse.has(recipe.name));
+      const candidates = unused.length ? unused : items;
+      return candidates
+        .map(recipe => {
+          const sharedIngredients = (recipe.ingredients || []).reduce((score, [name]) => score + (ingredientRecipeUse.get(name)?.size > 0 ? 1 + Math.min(ingredientRecipeUse.get(name).size, 3) * .2 : 0), 0);
+          const preferenceScore = likedTerms.filter(term => `${recipe.name} ${(recipe.ingredients || []).map(([name]) => name).join(" ")}`.toLowerCase().includes(term)).length;
+          return { recipe, score: sharedIngredients * 3 + preferenceScore * 2 + Math.random() * .5 };
+        })
+        .sort((a, b) => b.score - a.score)[0].recipe;
+    }
+
+    async function makePlan() {
+      const people = Number(form.elements.people.value);
+      const days = Number(form.elements.days.value);
+      const calorieGoal = Number(form.elements.namedItem("calorieGoal").value);
+      const { diet, avoidTerms, requiresMeatEveryMeal } = getMealRequirements();
+      const preferences = form.elements.preferences.value.trim();
+      const positivePreferences = preferences.replace(/\b(?:no|avoid|without|skip|don't want|do not want)\s+[^,;.]+/gi, " ");
+      const likedTerms = positivePreferences.toLowerCase().split(/[^a-z]+/).filter(term => term.length > 3 && !["love", "like", "enjoy", "prefer", "with", "more", "less", "want"].includes(term));
+      const rankByPreference = items => shuffle(items.filter(item => recipeMatches(item, diet, avoidTerms)))
+        .map(item => ({ item, score: likedTerms.filter(term => `${item.name} ${(item.ingredients || []).map(([name]) => name).join(" ")}`.toLowerCase().includes(term)).length }))
+        .sort((a, b) => b.score - a.score).map(entry => entry.item);
+      const recipesForSlot = Object.fromEntries(mealTypes.map(type => {
+        const builtIn = type === "Snack" ? snacks : recipes.filter(recipe => {
+          if (type === "Breakfast") return mealTypeRecipeNames.Breakfast.has(recipe.name);
+          if (type === "Lunch") return mealTypeRecipeNames.Lunch.has(recipe.name);
+          return !mealTypeRecipeNames.Breakfast.has(recipe.name) && !mealTypeRecipeNames.Lunch.has(recipe.name);
+        });
+        const external = eligibleMealDbEntries(type, diet, avoidTerms, requiresMeatEveryMeal);
+        return [type, rankByPreference([...builtIn, ...external]).filter(recipe =>
+          type === "Snack" || !requiresMeatEveryMeal || recipeContainsMeat(recipe) || Boolean(recipe.id)
+        )];
+      }));
+      const planError = document.querySelector("#plan-error");
+
+      const unavailableType = schedule.slice(0, days).flatMap(day => day.mealTypes).find(type => recipesForSlot[type].length === 0);
+      if (unavailableType) {
+        planError.textContent = `No ${unavailableType.toLowerCase()} recipes match those dietary and food preferences. Try adjusting your preferences.`;
+        planError.hidden = false;
+        return false;
+      }
+      const emptyDayIndex = schedule.slice(0, days).findIndex(day => day.mealTypes.length === 0);
+      if (emptyDayIndex >= 0) {
+        planError.textContent = `Add at least one meal or snack for ${daysOfWeek[emptyDayIndex]} to meet the daily calorie target.`;
+        planError.hidden = false;
+        return false;
+      }
+      planError.hidden = true;
+
+      const totals = new Map();
+      let totalMealCount = 0;
+      const dailyCalories = Array(days).fill(0);
+      const cards = [];
+      const ingredientRecipeUse = new Map();
+      const recipeUse = new Map();
+      const addRecipe = (recipe, dayIndex, label, isSnack) => {
+        recipeUse.set(recipe.name, (recipeUse.get(recipe.name) || 0) + 1);
+        const calories = caloriesPerServing.get(recipe.name) ?? (isSnack ? 200 : label === "Breakfast" ? 450 : 520);
+        dailyCalories[dayIndex] += calories;
+        cards.push({ recipe, dayIndex, label, isSnack, calories, recipeCalories: calories, portionFactor: 1 });
+      };
+
+      const selectRecipeForSlot = async (type, dayIndex) => {
+        const candidates = [...recipesForSlot[type]];
+        while (candidates.length) {
+          const entry = pickRecipe(candidates, ingredientRecipeUse, recipeUse, likedTerms);
+          const recipe = entry.id ? await getMealDbRecipe(entry) : entry;
+          if (recipeMatches(recipe, diet, avoidTerms) && (!requiresMeatEveryMeal || type === "Snack" || recipeContainsMeat(recipe))) {
+            return recipe;
+          }
+          candidates.splice(candidates.indexOf(entry), 1);
+        }
+        planError.textContent = `No ${type.toLowerCase()} recipes match those dietary and food preferences for ${daysOfWeek[dayIndex]}. Try adjusting your preferences.`;
+        planError.hidden = false;
+        throw new Error(planError.textContent);
+      };
+
+      schedule.slice(0, days).forEach((day, dayIndex) => {
+        for (const mealType of mealTypes.filter(type => type !== "Snack" && day.mealTypes.includes(type))) {
+          totalMealCount++;
+        }
+      });
+      for (let dayIndex = 0; dayIndex < days; dayIndex++) {
+        const day = schedule[dayIndex];
+        for (const mealType of mealTypes.filter(type => type !== "Snack" && day.mealTypes.includes(type))) {
+          const recipe = await selectRecipeForSlot(mealType, dayIndex);
+          addRecipe(recipe, dayIndex, mealType, false);
+        }
+        if (day.mealTypes.includes("Snack")) {
+          const recipe = await selectRecipeForSlot("Snack", dayIndex);
+          addRecipe(recipe, dayIndex, "Snack", true);
+        }
+      }
+
+      for (let dayIndex = 0; dayIndex < days; dayIndex++) {
+        const baseCalories = dailyCalories[dayIndex];
+        if (baseCalories <= 0) {
+          planError.textContent = `Could not calculate a calorie target for ${daysOfWeek[dayIndex]}. Add a meal or snack and try again.`;
+          planError.hidden = false;
+          return false;
+        }
+        const portionFactor = calorieGoal / baseCalories;
+        dailyCalories[dayIndex] = calorieGoal;
+        const dayCards = cards.filter(card => card.dayIndex === dayIndex);
+        dayCards.forEach((card, cardIndex) => {
+          card.portionFactor = portionFactor;
+          card.calories = cardIndex === dayCards.length - 1
+            ? calorieGoal - dayCards.slice(0, cardIndex).reduce((sum, prior) => sum + prior.calories, 0)
+            : Math.round(card.recipeCalories * portionFactor);
+          card.recipe.ingredients.forEach(([name, amount, unit]) => {
+            const required = amount * people * portionFactor;
+            const key = `${name}|${unit}`;
+            const existing = totals.get(key) || { name, amount: 0, unit };
+            existing.amount += required;
+            totals.set(key, existing);
+            if (!ingredientRecipeUse.has(name)) ingredientRecipeUse.set(name, new Set());
+            ingredientRecipeUse.get(name).add(card.recipe.name);
+          });
+        });
+      }
+
+      activeCards = cards;
+      document.querySelector("#meal-list").innerHTML = cards.map(({ recipe, dayIndex, label, isSnack, calories, portionFactor }, index) => `<button type="button" class="panel meal-card" data-card-index="${index}" aria-haspopup="dialog">
+        <div class="meal-icon" aria-hidden="true">${recipe.icon}</div>
+        <div><div class="meal-day">${daysOfWeek[dayIndex]} · ${label}</div><div class="meal-name">${recipe.name}</div><div class="meal-meta">~${calories} cal per person · portion ×${portionFactor.toFixed(2)}${isSnack ? " · Snack" : ` · ${recipe.time} min`}</div></div>
+      </button>`).join("") || '<p class="panel empty-note">No meals or snacks selected for these days.</p>';
+      dailyCalorieTotals = dailyCalories;
+      updateCalorieSummary();
+
+      const list = [...totals.values()].sort((a, b) =>
+        ingredientRecipeUse.get(b.name).size - ingredientRecipeUse.get(a.name).size || a.name.localeCompare(b.name)
+      );
+      const sharedIngredientCount = list.filter(item => ingredientRecipeUse.get(item.name).size > 1).length;
+      document.querySelector("#grocery-list").innerHTML = list.map(item => {
+        const amount = Number(item.amount.toFixed(2));
+        const recipeCount = ingredientRecipeUse.get(item.name).size;
+        const usage = recipeCount > 1 ? `Used in ${recipeCount} recipes` : "Used in 1 recipe";
+        return `<label class="grocery-row"><input type="checkbox" aria-label="Mark ${item.name} as picked up"><span class="grocery-label"><span class="grocery-name">${item.name}</span><small class="grocery-usage">${usage}</small></span><span class="grocery-amount">${amount} ${item.unit}${amount === 1 ? "" : "s"}</span></label>`;
+      }).join("") || '<p class="empty-note">Your list is empty.</p>';
+
+      const dietLabels = { balanced: "No restrictions", vegetarian: "Vegetarian", vegan: "Vegan", "gluten-free": "Gluten-free", "dairy-free": "Dairy-free" };
+      const summaryDetail = document.querySelector("#summary-detail");
+      summaryDetail.replaceChildren();
+      const detail = document.createElement("span");
+      detail.textContent = `${dietLabels[diet]} · ${people} ${people === 1 ? "person" : "people"}${preferences ? ` · Preferences: ${preferences}` : ""}`;
+      summaryDetail.append(detail);
+      document.querySelector("#summary-title").textContent = `${days}-day plan for ${people}`;
+      document.querySelector("#meal-count").textContent = `${totalMealCount} meals · ${cards.length - totalMealCount} snacks`;
+      document.querySelector("#shopping-subtitle").textContent = `${list.length} ingredients · ${sharedIngredientCount} shared across recipes`;
+      currentShoppingText = list.map(item => `□ ${item.name} — ${Number(item.amount.toFixed(2))} ${item.unit}${item.amount === 1 ? "" : "s"}`).join("\n");
+      return true;
+    }
+
+    form.elements.days.addEventListener("change", renderSchedule);
+    form.elements.namedItem("mealsPerDay").addEventListener("change", () => {
+      const defaultMeals = Number(form.elements.namedItem("mealsPerDay").value);
+      const defaultTypes = defaultMeals === 1 ? ["Dinner"] : defaultMeals === 2 ? ["Lunch", "Dinner"] : defaultMeals === 3 ? ["Breakfast", "Lunch", "Dinner"] : [];
+      schedule.slice(0, Number(form.elements.days.value)).forEach(day => {
+        const snackSelected = day.mealTypes?.includes("Snack") || false;
+        day.mealTypes = [...defaultTypes, ...(snackSelected ? ["Snack"] : [])];
+      });
+      renderSchedule();
+    });
+    form.elements.namedItem("calorieGoal").addEventListener("change", () => {
+      if (dailyCalorieTotals.length && form.reportValidity()) runPlan();
+    });
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      runPlan();
+    });
+
+    async function runPlan() {
+      const planError = document.querySelector("#plan-error");
+      const button = form.querySelector(".generate");
+      button.disabled = true;
+      button.textContent = "Building your plan…";
+      try {
+        await makePlan();
+      } catch (error) {
+        console.error("Could not build the meal plan.", error);
+        planError.textContent = `Could not build the meal plan: ${error.message}`;
+        planError.hidden = false;
+      } finally {
+        button.disabled = false;
+        button.innerHTML = 'Build my meal plan <span aria-hidden="true">→</span>';
+      }
+    }
+
+    document.querySelector("#copy-list").addEventListener("click", async event => {
+      const button = event.currentTarget;
+      try {
+        await navigator.clipboard.writeText(currentShoppingText);
+        button.textContent = "Copied!";
+        window.setTimeout(() => { button.textContent = "Copy list"; }, 1600);
+      } catch (error) {
+        button.textContent = "Copy unavailable";
+        window.setTimeout(() => { button.textContent = "Copy list"; }, 2000);
+      }
+    });
+
+    renderSchedule();
+    loadMealDbCatalog().catch(error => {
+      console.error("Could not load recipes from TheMealDB.", error);
+      document.querySelector("#recipe-source-status").textContent = "Could not load extra recipes from TheMealDB. Check your internet connection; built-in recipes are still available.";
+    });
+  </script>
+</body>
+</html>
